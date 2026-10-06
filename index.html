@@ -168,21 +168,50 @@
 
         select {
             width: 100%;
-            max-width: 400px;
-            padding: 0.75rem;
-            background-color: var(--card-bg);
+            max-width: 300px;
+            padding: 0.5rem 0.75rem;
+            background-color: var(--bg-color);
             border: 1px solid var(--border);
             color: var(--text-main);
             border-radius: 0.5rem;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
-        .result-card {
+        .user-card {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 0.75rem;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+            padding: 1.25rem;
+            margin-top: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .user-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+
+        .user-id-box {
+            font-family: monospace;
+            background-color: var(--bg-color);
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.4rem;
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 1rem;
+        }
+
+        .rank-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .badge {
@@ -195,6 +224,26 @@
 
         .badge-success { background-color: var(--success); color: white; }
         .badge-danger { background-color: var(--danger); color: white; }
+
+        .break-command-box {
+            background-color: var(--bg-color);
+            border: 1px dashed var(--danger);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .break-command-text {
+            font-family: monospace;
+            color: #fca5a5;
+            direction: ltr;
+            text-align: left;
+            word-break: break-all;
+        }
 
         table {
             width: 100%;
@@ -217,18 +266,18 @@
         }
 
         .copy-btn {
-            background-color: var(--border);
+            background-color: var(--accent);
             border: none;
             color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.35rem;
             cursor: pointer;
-            font-size: 0.8rem;
-            margin-right: 0.5rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
         }
 
         .copy-btn:hover {
-            background-color: var(--accent);
+            background-color: var(--accent-hover);
         }
     </style>
 </head>
@@ -237,7 +286,7 @@
     <header>
         <nav>
             <button class="nav-btn active" onclick="showPage('page1', event)">1. جرد الدورات</button>
-            <button class="nav-btn" onclick="showPage('page2', event)">2. فحص الأشخاص والكسر</button>
+            <button class="nav-btn" onclick="showPage('page2', event)">2. فحص واستعلام الرتب والكسر</button>
             <button class="nav-btn" onclick="showPage('page3', event)">3. التقرير الشامل</button>
         </nav>
     </header>
@@ -295,25 +344,9 @@
                 <textarea id="search_users" placeholder="1. <@755202816187826318>&#10;2. 938254436671840256"></textarea>
             </div>
 
-            <div class="form-group">
-                <label>تحديد الرتبة الحالية للمجموعة:</label>
-                <select id="selected_rank">
-                    <option value="فريق اول">فريق أول</option>
-                    <option value="فريق">فريق</option>
-                    <option value="لواء">لواء</option>
-                    <option value="عميد">عميد</option>
-                    <option value="عقيد">عقيد</option>
-                    <option value="مقدم">مقدم</option>
-                    <option value="رائد">رائد</option>
-                    <option value="نقيب">نقيب</option>
-                    <option value="ملازم اول">ملازم أول</option>
-                    <option value="ملازم">ملازم</option>
-                </select>
-            </div>
+            <button class="btn" onclick="processSearch()">عرض واستعلام الأشخاص</button>
 
-            <button class="btn" onclick="processSearch()">فحص وتحليل الشروط</button>
-
-            <div id="search_results"></div>
+            <div id="search_results" style="margin-top: 1.5rem;"></div>
         </section>
 
         <!-- الصفحة الثالثة: التقرير الشامل -->
@@ -328,7 +361,6 @@
     </main>
 
     <script>
-        // تعريف معُرفات الأدوار للكسر
         const DEMOTION_ROLES = {
             "رئيس رقباء": "1450494016843022521",
             "ملازم": "1450494015635193948",
@@ -352,14 +384,18 @@
             'c_falcons': 'صقور جوية'
         };
 
-        // استخراج الإيديات باستخدام Regex
+        const RANKS_LIST = [
+            "اختر الرتبة الحالية...",
+            "فريق اول", "فريق", "لواء", "عميد", "عقيد", 
+            "مقدم", "رائد", "نقيب", "ملازم اول", "ملازم"
+        ];
+
         function extractUserIds(text) {
             const regex = /\b\d{17,19}\b/g;
             const matches = text.match(regex);
             return matches ? [...new Set(matches)] : [];
         }
 
-        // حفظ البيانات في LocalStorage
         function saveCourses() {
             const data = {};
             COURSES_KEYS.forEach(key => {
@@ -370,7 +406,6 @@
             alert('تم حفظ بيانات الدورات بنجاح!');
         }
 
-        // تحميل البيانات من LocalStorage
         function loadCourses() {
             const data = JSON.parse(localStorage.getItem('military_courses_data') || '{}');
             COURSES_KEYS.forEach(key => {
@@ -380,7 +415,6 @@
             });
         }
 
-        // مسح كافة البيانات
         function clearData() {
             if (confirm('هل أنت تأكد من مسح جميع البيانات المخزنة في المتصفح؟')) {
                 localStorage.removeItem('military_courses_data');
@@ -389,7 +423,6 @@
             }
         }
 
-        // التنقل بين الصفحات
         function showPage(pageId, evt) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -404,7 +437,6 @@
             }
         }
 
-        // الحصول على دورات المستخدم
         function getUserCourses(userId) {
             const data = JSON.parse(localStorage.getItem('military_courses_data') || '{}');
             const userCourses = [];
@@ -416,8 +448,12 @@
             return userCourses;
         }
 
-        // حساب شروط كسر الرتب بناءً على الأولوية الأشد
+        // شروط الكسر وحساب الأدوار
         function calculateDemotion(currentRank, userCourses) {
+            if (!currentRank || currentRank.includes("اختر")) {
+                return { demoted: false, targetRank: null, roleId: null, reason: "يرجى اختيار رتبة الشخص أولاً" };
+            }
+
             const hasBasic = userCourses.includes('c_basic');
             const hasOps = userCourses.includes('c_ops');
             const hasOfficer = userCourses.includes('c_officer');
@@ -427,7 +463,7 @@
             const hasFrogs = userCourses.includes('c_frogs');
             const hasFalcons = userCourses.includes('c_falcons');
 
-            // 1. الأولوية الأولى والأشد: عدم وجود أي من الدورات 4 الأساسية -> يكسر لرئيس رقباء
+            // 1. الدورات الأساسية -> رئيس رقباء
             if (!hasBasic || !hasOps || !hasOfficer || !hasFirstAid) {
                 const missingBasic = [];
                 if (!hasBasic) missingBasic.push('فرد أساس');
@@ -443,7 +479,7 @@
                 };
             }
 
-            // 2. الأولوية الثانية: نقص مظلات مشتركة -> يكسر لملازم
+            // 2. مظلات مشتركة -> ملازم
             if (!hasParachute) {
                 return {
                     demoted: true,
@@ -453,7 +489,7 @@
                 };
             }
 
-            // 3. الأولوية الثالثة: عدم وجود صاعقة ولا ضفادع -> يكسر لنقيب
+            // 3. لا يوجد صاعقة ولا ضفادع -> نقيب
             if (!hasThunder && !hasFrogs) {
                 return {
                     demoted: true,
@@ -463,7 +499,7 @@
                 };
             }
 
-            // 4. الأولوية الرابعة: نقص صقور جوية -> يكسر لرائد
+            // 4. نقص صقور جوية -> رائد
             if (!hasFalcons) {
                 return {
                     demoted: true,
@@ -473,59 +509,94 @@
                 };
             }
 
-            // مستوفٍ لكل الدورات
-            return { 
-                demoted: false, 
-                targetRank: currentRank, 
-                roleId: null, 
-                reason: "مستوفٍ لكافة الدورات المطلوبة" 
-            };
+            return { demoted: false, targetRank: currentRank, roleId: null, reason: "مستوفٍ لكافة الدورات المطلوبة" };
         }
 
-        // معالجة البحث والكسر
+        // توليد خيارات الرتب
+        function getRankOptionsHTML(selectedRank = "") {
+            return RANKS_LIST.map(r => `<option value="${r}" ${r === selectedRank ? 'selected' : ''}>${r}</option>`).join('');
+        }
+
+        // عرض مربعات المستعلم عنهم
         function processSearch() {
             const rawText = document.getElementById('search_users').value;
-            const rank = document.getElementById('selected_rank').value;
             const userIds = extractUserIds(rawText);
-            const resultsContainer = document.getElementById('search_results');
+            const container = document.getElementById('search_results');
 
             if (userIds.length === 0) {
-                resultsContainer.innerHTML = '<p style="margin-top:1rem; color:var(--danger)">لم يتم العثور على أرقام ID صالحة.</p>';
+                container.innerHTML = '<p style="color:var(--danger)">لم يتم العثور على أرقام ID صالحة.</p>';
                 return;
             }
 
-            let html = '<div class="result-card"><h3>نتائج الفحص:</h3>';
+            let html = '';
 
             userIds.forEach(id => {
                 const userCourses = getUserCourses(id);
-                const demotionInfo = calculateDemotion(rank, userCourses);
                 const courseNamesList = userCourses.map(k => COURSE_NAMES[k]).join(' - ') || 'لا توجد دورات مسجلة';
 
                 html += `
-                    <div style="border-bottom: 1px solid var(--border); padding: 1rem 0;">
-                        <p><strong>المستخدم:</strong> &lt;@${id}&gt; (<code>${id}</code>)</p>
-                        <p><strong>الدورات التي يملكها:</strong> ${courseNamesList}</p>
-                        <p><strong>الحالة:</strong> 
-                            ${demotionInfo.demoted 
-                                ? `<span class="badge badge-danger">يتم كسره إلى ${demotionInfo.targetRank}</span> (السبب: ${demotionInfo.reason})` 
-                                : `<span class="badge badge-success">سليم ومستوف للشروط</span>`}
-                        </p>
-                        ${demotionInfo.demoted ? `
-                            <p style="margin-top:0.5rem; color:var(--accent);">
-                                <strong>أمر الكسر لعدم إكمال الدورات:</strong> 
-                                <code>&lt;@${id}&gt; يتم كسره إلى &lt;@&amp;${demotionInfo.roleId}&gt; بسبب عدم اكمال الدورات</code>
-                                <button class="copy-btn" onclick="navigator.clipboard.writeText('<@${id}> يتم كسره إلى <@&${demotionInfo.roleId}> بسبب عدم اكمال الدورات')">نسخ</button>
-                            </p>
-                        ` : ''}
+                    <div class="user-card" id="card_${id}">
+                        <div class="user-card-header">
+                            <div>
+                                <strong>المستخدم:</strong> <span class="user-id-box">&lt;@${id}&gt;</span>
+                            </div>
+                            <div class="rank-selector-group">
+                                <label for="rank_${id}">الرتبة الحالية:</label>
+                                <select id="rank_${id}" onchange="updateUserStatus('${id}')">
+                                    ${getRankOptionsHTML()}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <p><strong>الدورات المسجلة له (${userCourses.length} من 8):</strong> ${courseNamesList}</p>
+                        </div>
+
+                        <div id="status_box_${id}">
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">اختر رتبته من الأعلى لبدء الفحص والكسر...</p>
+                        </div>
                     </div>
                 `;
             });
 
-            html += '</div>';
-            resultsContainer.innerHTML = html;
+            container.innerHTML = html;
         }
 
-        // عرض التقرير الشامل
+        // تحديث حالة الفحص لكل شخص فور تغيير رتبته
+        function updateUserStatus(userId) {
+            const selectedRank = document.getElementById(`rank_${userId}`).value;
+            const userCourses = getUserCourses(userId);
+            const statusBox = document.getElementById(`status_box_${userId}`);
+            const result = calculateDemotion(selectedRank, userCourses);
+
+            if (!result.targetRank && !result.demoted) {
+                statusBox.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">اختر رتبته من الأعلى لبدء الفحص والكسر...</p>';
+                return;
+            }
+
+            if (result.demoted) {
+                const breakCommand = `<@${userId}> يتم كسره إلى <@&${result.roleId}> بسبب عدم اكمال الدورات`;
+                statusBox.innerHTML = `
+                    <p style="margin-bottom:0.5rem;">
+                        <strong>حالة الدورات والكسر:</strong> 
+                        <span class="badge badge-danger">يتم كسره إلى ${result.targetRank}</span>
+                        <span style="color: var(--text-muted); font-size:0.9rem; margin-right: 0.5rem;">(السبب: ${result.reason})</span>
+                    </p>
+                    <div class="break-command-box">
+                        <span class="break-command-text">${breakCommand}</span>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${breakCommand}')">نسخ الأمر</button>
+                    </div>
+                `;
+            } else {
+                statusBox.innerHTML = `
+                    <p>
+                        <strong>حالة الدورات والكسر:</strong> 
+                        <span class="badge badge-success">سليم ومستوف لشروط رتبة (${selectedRank})</span>
+                    </p>
+                `;
+            }
+        }
+
         function renderReport() {
             const data = JSON.parse(localStorage.getItem('military_courses_data') || '{}');
             let allUsers = [];
@@ -574,7 +645,6 @@
             container.innerHTML = html;
         }
 
-        // تحميل البيانات عند بداية تشغيل الصفحة
         window.onload = loadCourses;
     </script>
 </body>
