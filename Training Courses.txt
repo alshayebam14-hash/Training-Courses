@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام جرد الدورات وكسر الرتب</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+        }
+
+        nav {
+            display: flex;
+            gap: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.75rem 1.25rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .nav-btn:hover:not(.active) {
+            background-color: var(--border);
+            color: var(--text-main);
+        }
+
+        main {
+            max-width: 1200px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex: 1;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        h1, h2 {
+            margin-bottom: 1.5rem;
+        }
+
+        .grid-courses {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .course-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .course-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent);
+        }
+
+        textarea {
+            width: 100%;
+            height: 160px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: var(--text-main);
+            resize: vertical;
+            font-family: monospace;
+            direction: ltr;
+        }
+
+        textarea:focus {
+            outline: 2px solid var(--accent);
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .actions-bar {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        select {
+            width: 100%;
+            max-width: 400px;
+            padding: 0.75rem;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .result-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .badge-success { background-color: var(--success); color: white; }
+        .badge-danger { background-color: var(--danger); color: white; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--accent);
+        }
+
+        .copy-btn {
+            background-color: var(--border);
+            border: none;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <button class="nav-btn active" onclick="showPage('page1', event)">1. جرد الدورات</button>
+            <button class="nav-btn" onclick="showPage('page2', event)">2. فحص الأشخاص والكسر</button>
+            <button class="nav-btn" onclick="showPage('page3', event)">3. التقرير الشامل</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- الصفحة الأولى: إدخال الدورات -->
+        <section id="page1" class="page active">
+            <h2>إدخال وتحديث جرد الدورات</h2>
+            <div class="grid-courses">
+                <div class="course-card">
+                    <h3>فرد أساس</h3>
+                    <textarea id="c_basic" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>مركز عمليات</h3>
+                    <textarea id="c_ops" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>إسعافات أولية</h3>
+                    <textarea id="c_firstaid" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>تأهيل ضباط</h3>
+                    <textarea id="c_officer" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>مظلات مشتركة</h3>
+                    <textarea id="c_parachute" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>صاعقة</h3>
+                    <textarea id="c_thunder" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>ضفادع</h3>
+                    <textarea id="c_frogs" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+                <div class="course-card">
+                    <h3>صقور جوية</h3>
+                    <textarea id="c_falcons" placeholder="ضع المنشنات هنا..."></textarea>
+                </div>
+            </div>
+            <div class="actions-bar">
+                <button class="btn" onclick="saveCourses()">حفظ البيانات</button>
+                <button class="btn btn-danger" onclick="clearData()">تفريغ البيانات بالكامل</button>
+            </div>
+        </section>
+
+        <!-- الصفحة الثانية: الفحص وكسر الرتب -->
+        <section id="page2" class="page">
+            <h2>فحص واستعلام الرتب والكسر</h2>
+            
+            <div class="form-group">
+                <label>أدخل قائمة المنشنات أو الإيديات للبحث:</label>
+                <textarea id="search_users" placeholder="1. <@755202816187826318>&#10;2. 938254436671840256"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>تحديد الرتبة الحالية للمجموعة:</label>
+                <select id="selected_rank">
+                    <option value="فريق اول">فريق أول</option>
+                    <option value="فريق">فريق</option>
+                    <option value="لواء">لواء</option>
+                    <option value="عميد">عميد</option>
+                    <option value="عقيد">عقيد</option>
+                    <option value="مقدم">مقدم</option>
+                    <option value="رائد">رائد</option>
+                    <option value="نقيب">نقيب</option>
+                    <option value="ملازم اول">ملازم أول</option>
+                    <option value="ملازم">ملازم</option>
+                </select>
+            </div>
+
+            <button class="btn" onclick="processSearch()">فحص وتحليل الشروط</button>
+
+            <div id="search_results"></div>
+        </section>
+
+        <!-- الصفحة الثالثة: التقرير الشامل -->
+        <section id="page3" class="page">
+            <h2>التقرير الشامل والبيانات الحالية</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">عرض قائمة مفصلة بكل الإيديات المسجلة وحالات الدورات</p>
+            
+            <button class="btn" onclick="renderReport()">تحديث التقرير</button>
+            
+            <div id="report_container"></div>
+        </section>
+    </main>
+
+    <script>
+        // تعريف معُرفات الأدوار للكسر
+        const DEMOTION_ROLES = {
+            "رئيس رقباء": "1450494016843022521",
+            "ملازم": "1450494015635193948",
+            "نقيب": "1450494013202501745",
+            "رائد": "1450494012300464329"
+        };
+
+        const COURSES_KEYS = [
+            'c_basic', 'c_ops', 'c_firstaid', 'c_officer', 
+            'c_parachute', 'c_thunder', 'c_frogs', 'c_falcons'
+        ];
+
+        const COURSE_NAMES = {
+            'c_basic': 'فرد أساس',
+            'c_ops': 'مركز عمليات',
+            'c_firstaid': 'إسعافات أولية',
+            'c_officer': 'تأهيل ضباط',
+            'c_parachute': 'مظلات مشتركة',
+            'c_thunder': 'صاعقة',
+            'c_frogs': 'ضفادع',
+            'c_falcons': 'صقور جوية'
+        };
+
+        // استخراج الإيديات باستخدام Regex
+        function extractUserIds(text) {
+            const regex = /\b\d{17,19}\b/g;
+            const matches = text.match(regex);
+            return matches ? [...new Set(matches)] : [];
+        }
+
+        // حفظ البيانات في LocalStorage
+        function saveCourses() {
+            const data = {};
+            COURSES_KEYS.forEach(key => {
+                const text = document.getElementById(key).value;
+                data[key] = extractUserIds(text);
+            });
+            localStorage.setItem('military_courses_data', JSON.stringify(data));
+            alert('تم حفظ بيانات الدورات بنجاح!');
+        }
+
+        // تحميل البيانات من LocalStorage
+        function loadCourses() {
+            const data = JSON.parse(localStorage.getItem('military_courses_data') || '{}');
+            COURSES_KEYS.forEach(key => {
+                if (data[key]) {
+                    document.getElementById(key).value = data[key].map(id => `<@${id}>`).join('\n');
+                }
+            });
+        }
+
+        // مسح كافة البيانات
+        function clearData() {
+            if (confirm('هل أنت تأكد من مسح جميع البيانات المخزنة في المتصفح؟')) {
+                localStorage.removeItem('military_courses_data');
+                COURSES_KEYS.forEach(key => document.getElementById(key).value = '');
+                alert('تم مسح البيانات.');
+            }
+        }
+
+        // التنقل بين الصفحات
+        function showPage(pageId, evt) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            if (evt && evt.target) {
+                evt.target.classList.add('active');
+            }
+
+            if (pageId === 'page3') {
+                renderReport();
+            }
+        }
+
+        // الحصول على دورات المستخدم
+        function getUserCourses(userId) {
+            const data = JSON.parse(localStorage.getItem('military_courses_data') || '{}');
+            const userCourses = [];
+            COURSES_KEYS.forEach(key => {
+                if (data[key] && data[key].includes(userId)) {
+                    userCourses.push(key);
+                }
+            });
+            return userCourses;
+        }
+
+        // حساب شروط كسر الرتب بناءً على الأولوية الأشد
+        function calculateDemotion(currentRank, userCourses) {
+            const hasBasic = userCourses.includes('c_basic');
+            const hasOps = userCourses.includes('c_ops');
+            const hasOfficer = userCourses.includes('c_officer');
+            const hasFirstAid = userCourses.includes('c_firstaid');
+            const hasParachute = userCourses.includes('c_parachute');
+            const hasThunder = userCourses.includes('c_thunder');
+            const hasFrogs = userCourses.includes('c_frogs');
+            const hasFalcons = userCourses.includes('c_falcons');
+
+            // 1. الأولوية الأولى والأشد: عدم وجود أي من الدورات 4 الأساسية -> يكسر لرئيس رقباء
+            if (!hasBasic || !hasOps || !hasOfficer || !hasFirstAid) {
+                const missingBasic = [];
+                if (!hasBasic) missingBasic.push('فرد أساس');
+                if (!hasOps) missingBasic.push('مركز عمليات');
+                if (!hasOfficer) missingBasic.push('تأهيل ضباط');
+                if (!hasFirstAid) missingBasic.push('إسعافات أولية');
+
+                return {
+                    demoted: true,
+                    targetRank: "رئيس رقباء",
+                    roleId: DEMOTION_ROLES["رئيس رقباء"],
+                    reason: `نقص في الدورات الأساسية (${missingBasic.join('، ')})`
+                };
+            }
+
+            // 2. الأولوية الثانية: نقص مظلات مشتركة -> يكسر لملازم
+            if (!hasParachute) {
+                return {
+                    demoted: true,
+                    targetRank: "ملازم",
+                    roleId: DEMOTION_ROLES["ملازم"],
+                    reason: "نقص دورة مظلات مشتركة"
+                };
+            }
+
+            // 3. الأولوية الثالثة: عدم وجود صاعقة ولا ضفادع -> يكسر لنقيب
+            if (!hasThunder && !hasFrogs) {
+                return {
+                    demoted: true,
+                    targetRank: "نقيب",
+                    roleId: DEMOTION_ROLES["نقيب"],
+                    reason: "عدم وجود دورة صاعقة ولا ضفادع"
+                };
+            }
+
+            // 4. الأولوية الرابعة: نقص صقور جوية -> يكسر لرائد
+            if (!hasFalcons) {
+                return {
+                    demoted: true,
+                    targetRank: "رائد",
+                    roleId: DEMOTION_ROLES["رائد"],
+                    reason: "نقص دورة صقور جوية"
+                };
+            }
+
+            // مستوفٍ لكل الدورات
+            return { 
+                demoted: false, 
+                targetRank: currentRank, 
+                roleId: null, 
+                reason: "مستوفٍ لكافة الدورات المطلوبة" 
+            };
+        }
+
+        // معالجة البحث والكسر
+        function processSearch() {
+            const rawText = document.getElementById('search_users').value;
+            const rank = document.getElementById('selected_rank').value;
+            const userIds = extractUserIds(rawText);
+            const resultsContainer = document.getElementById('search_results');
+
+            if (userIds.length === 0) {
+                resultsContainer.innerHTML = '<p style="margin-top:1rem; color:var(--danger)">لم يتم العثور على أرقام ID صالحة.</p>';
+                return;
+            }
+
+            let html = '<div class="result-card"><h3>نتائج الفحص:</h3>';
+
+            userIds.forEach(id => {
+                const userCourses = getUserCourses(id);
+                const demotionInfo = calculateDemotion(rank, userCourses);
+                const courseNamesList = userCourses.map(k => COURSE_NAMES[k]).join(' - ') || 'لا توجد دورات مسجلة';
+
+                html += `
+                    <div style="border-bottom: 1px solid var(--border); padding: 1rem 0;">
+                        <p><strong>المستخدم:</strong> &lt;@${id}&gt; (<code>${id}</code>)</p>
+                        <p><strong>الدورات التي يملكها:</strong> ${courseNamesList}</p>
+                        <p><strong>الحالة:</strong> 
+                            ${demotionInfo.demoted 
+                                ? `<span class="badge badge-danger">يتم كسره إلى ${demotionInfo.targetRank}</span> (السبب: ${demotionInfo.reason})` 
+                                : `<span class="badge badge-success">سليم ومستوف للشروط</span>`}
+                        </p>
+                        ${demotionInfo.demoted ? `
+                            <p style="margin-top:0.5rem; color:var(--accent);">
+                                <strong>أمر الكسر لعدم إكمال الدورات:</strong> 
+                                <code>&lt;@${id}&gt; يتم كسره إلى &lt;@&amp;${demotionInfo.roleId}&gt; بسبب عدم اكمال الدورات</code>
+                                <button class="copy-btn" onclick="navigator.clipboard.writeText('<@${id}> يتم كسره إلى <@&${demotionInfo.roleId}> بسبب عدم اكمال الدورات')">نسخ</button>
+                            </p>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            resultsContainer.innerHTML = html;
+        }
+
+        // عرض التقرير الشامل
+        function renderReport() {
+            const data = JSON.parse(localStorage.getItem('military_courses_data') || '{}');
+            let allUsers = [];
+
+            COURSES_KEYS.forEach(key => {
+                if (data[key]) {
+                    allUsers = allUsers.concat(data[key]);
+                }
+            });
+
+            allUsers = [...new Set(allUsers)];
+            const container = document.getElementById('report_container');
+
+            if (allUsers.length === 0) {
+                container.innerHTML = '<p style="margin-top:1rem;">لا توجد أي بيانات مدخلة في الجرد حتى الآن.</p>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الـ User ID</th>
+                            <th>المنشن</th>
+                            <th>عدد الدورات</th>
+                            <th>الدورات المسجلة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            allUsers.forEach(id => {
+                const userCourses = getUserCourses(id);
+                const names = userCourses.map(k => COURSE_NAMES[k]).join(', ');
+                html += `
+                    <tr>
+                        <td><code>${id}</code></td>
+                        <td>&lt;@${id}&gt;</td>
+                        <td>${userCourses.length} / 8</td>
+                        <td>${names}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // تحميل البيانات عند بداية تشغيل الصفحة
+        window.onload = loadCourses;
+    </script>
+</body>
+</html>
