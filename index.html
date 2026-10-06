@@ -110,7 +110,7 @@
 
         textarea {
             width: 100%;
-            height: 160px;
+            height: 180px;
             background-color: var(--bg-color);
             border: 1px solid var(--border);
             border-radius: 0.5rem;
@@ -156,8 +156,17 @@
             align-items: center;
         }
 
-        .form-group {
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
             margin-bottom: 1.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         label {
@@ -206,6 +215,12 @@
             border: 1px solid var(--border);
             color: var(--accent);
             font-size: 1rem;
+        }
+
+        .user-name-tag {
+            color: #e2e8f0;
+            font-weight: 600;
+            margin-right: 0.5rem;
         }
 
         .rank-selector-group {
@@ -339,9 +354,15 @@
         <section id="page2" class="page">
             <h2>فحص واستعلام الرتب والكسر</h2>
             
-            <div class="form-group">
-                <label>أدخل قائمة المنشنات أو الإيديات للبحث:</label>
-                <textarea id="search_users" placeholder="1. <@755202816187826318>&#10;2. 938254436671840256"></textarea>
+            <div class="input-grid">
+                <div>
+                    <label>الخانة الأولى (الكوبي يوزرات / المنشنات):</label>
+                    <textarea id="search_users" placeholder="<@1480810883373334538>&#10;<@1128020803804479549>"></textarea>
+                </div>
+                <div>
+                    <label>الخانة الثانية (الأسماء بالترتيب):</label>
+                    <textarea id="search_names" placeholder="@GR 💂‍♂️ R-312 Hassan 92430&#10;@GR 💂‍♂️ R-313 Fahd 136962" style="direction: rtl; font-family: inherit;"></textarea>
+                </div>
             </div>
 
             <button class="btn" onclick="processSearch()">عرض واستعلام الأشخاص</button>
@@ -396,6 +417,30 @@
             return matches ? [...new Set(matches)] : [];
         }
 
+        // استخراج الإيديات والأسماء متقابلة بحسب السطر
+        function parseUsersAndNames(usersText, namesText) {
+            const userLines = usersText.split('\n');
+            const nameLines = namesText.split('\n');
+            
+            const results = [];
+            const seenIds = new Set();
+
+            userLines.forEach((line, index) => {
+                const regex = /\b\d{17,19}\b/;
+                const match = line.match(regex);
+                if (match) {
+                    const id = match[0];
+                    if (!seenIds.has(id)) {
+                        seenIds.add(id);
+                        const name = nameLines[index] ? nameLines[index].trim() : '';
+                        results.push({ id, name });
+                    }
+                }
+            });
+
+            return results;
+        }
+
         function saveCourses() {
             const data = {};
             COURSES_KEYS.forEach(key => {
@@ -448,7 +493,6 @@
             return userCourses;
         }
 
-        // شروط الكسر وحساب الأدوار
         function calculateDemotion(currentRank, userCourses) {
             if (!currentRank || currentRank.includes("اختر")) {
                 return { demoted: false, targetRank: null, roleId: null, reason: "يرجى اختيار رتبة الشخص أولاً" };
@@ -512,25 +556,27 @@
             return { demoted: false, targetRank: currentRank, roleId: null, reason: "مستوفٍ لكافة الدورات المطلوبة" };
         }
 
-        // توليد خيارات الرتب
         function getRankOptionsHTML(selectedRank = "") {
             return RANKS_LIST.map(r => `<option value="${r}" ${r === selectedRank ? 'selected' : ''}>${r}</option>`).join('');
         }
 
-        // عرض مربعات المستعلم عنهم
         function processSearch() {
-            const rawText = document.getElementById('search_users').value;
-            const userIds = extractUserIds(rawText);
+            const rawUsersText = document.getElementById('search_users').value;
+            const rawNamesText = document.getElementById('search_names').value;
+            
+            const usersData = parseUsersAndNames(rawUsersText, rawNamesText);
             const container = document.getElementById('search_results');
 
-            if (userIds.length === 0) {
-                container.innerHTML = '<p style="color:var(--danger)">لم يتم العثور على أرقام ID صالحة.</p>';
+            if (usersData.length === 0) {
+                container.innerHTML = '<p style="color:var(--danger)">لم يتم العثور على أرقام ID صالحة في الخانة الأولى.</p>';
                 return;
             }
 
             let html = '';
 
-            userIds.forEach(id => {
+            usersData.forEach(item => {
+                const id = item.id;
+                const name = item.name;
                 const userCourses = getUserCourses(id);
                 const courseNamesList = userCourses.map(k => COURSE_NAMES[k]).join(' - ') || 'لا توجد دورات مسجلة';
 
@@ -539,6 +585,7 @@
                         <div class="user-card-header">
                             <div>
                                 <strong>المستخدم:</strong> <span class="user-id-box">&lt;@${id}&gt;</span>
+                                ${name ? `<span class="user-name-tag">- ${name}</span>` : ''}
                             </div>
                             <div class="rank-selector-group">
                                 <label for="rank_${id}">الرتبة الحالية:</label>
@@ -562,7 +609,6 @@
             container.innerHTML = html;
         }
 
-        // تحديث حالة الفحص لكل شخص فور تغيير رتبته
         function updateUserStatus(userId) {
             const selectedRank = document.getElementById(`rank_${userId}`).value;
             const userCourses = getUserCourses(userId);
